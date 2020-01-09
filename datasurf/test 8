@@ -1,0 +1,111 @@
+import pymysql
+
+34047227640
+alllist = set()
+lis = {}
+linkinfo ={}
+blankl = set()
+oldlist=[]
+newlist=[]
+done = []
+tarli = []
+emptyst = {}
+gene = 0
+dif = {"]',)",', ',"('[",']','['}
+
+print('this code needs a proxy')
+dbu = input ('db user name')
+dbn = input ('db neme for use')
+t1 = input ('insert seed')
+t2 = input ('insert generation')
+
+conn = pymysql.connect(host='localhost',user=dbu,db=dbn)
+cur = conn.cursor()
+
+def exec(tar,time,gen):
+    pfe = tar + 'wrong'
+    if str(tar) == '[]':
+        tar = 0
+    if time == 'old' or time == 'new':
+        print(f'start search {tar}')
+    else:
+        print(f'wrong {time}')
+        raise
+    tlist = time+'list'
+    tlist=[]
+    t = 0
+    if cur.execute(f"select dcid from allcol where dcid = {tar};"):
+        pass
+    else:
+        print(f'{tar} not exist ')
+        blankl.add(tar)
+        tar = 0
+    if tar:
+        squ = f"select json_extract({time},'$.{time}') from allcol where dcid = {tar};"
+        cur.execute(squ)
+        row = cur.fetchone()
+        if row[0] :
+            ti=row[0]
+            tn = list(set(str(ti).split('"'))-dif)
+            tlist = list(set(tn)-alllist)
+            newtn = len(tlist)
+            intern = len(set(tn) & alllist)
+            alllist.update(set(tn))
+            to  = str(gen) + time
+            lis[to] = tlist
+            linkinfo[str(to+"newlink")] = newtn
+            linkinfo[str(to+"intersection")]= intern
+            print(to + str(newtn))
+        else:
+            emptyst[str(gen) + time + str(tar)]=1
+            tar = 0
+    else:
+        print(pfe)
+
+def run(gn):
+    algo = ''
+    go = []
+
+    tarli.append(lis[str(gn-1)+'old'])
+    tarli.append(lis[str(gn-1)+'new'])
+  
+    go = tarli.pop() + tarli.pop()
+    while go:
+        algo = str(go.pop())
+        try :
+            done.index(algo)
+        except:
+            done.append(algo)
+            exec(algo,'old',gn)
+            exec(algo,'new',gn)
+        
+
+
+def surf(seed,gen):
+    print(f'find linkage from {seed} for {gen}th generation')
+    exec(seed,'new',0)
+    exec(seed,'old',0)
+    tarli.append(lis['0old'])
+    tarli.append(lis['0new'])
+    endt = int(gen) +1
+    gene = 0
+    while int(gene) < int(endt):
+        gene = gene + 1
+        run(gene)
+
+surf(t1,t2)
+print('end')
+f= open('result.txt','w')
+oa = f'result for searching {t1} with {t2}th generations\n'
+ob = str(alllist)
+oba = '{all searched list is : ['+ob+']}\n'
+oc = str(lis)
+ab = oa+oba+oc
+f.write(ab)
+f.close()
+f = open('resultem.txt','w')
+wem = str(emptyst)
+f.write(wem)
+f.write('\n not exist blank data \n ' + str(blankl))
+f.close()
+print(emptyst)
